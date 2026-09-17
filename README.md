@@ -104,7 +104,7 @@ Click **"Reset All Cassettes"** to restore everything to healthy baseline for an
 
 ---
 
-## Code Walkthrough (Interview Talking Points)
+## Code Walkthrough
 
 ### `engine/audit_engine.py` — The Producer
 - Background thread emitting synthetic audit records with configurable noise
