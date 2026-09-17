@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-VIEW Audit Trend Monitor — Cassette Health Analytics</title>
+    <meta name="description" content="Real-time confidence trend monitoring dashboard for Takazono Eser Pre-VIEW tablet audit system with drift detection and early warning.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ════════════ HEADER ════════════ -->
+    <header id="main-header">
+        <div class="header-left">
+            <div class="logo-mark">💊</div>
+            <div class="header-text">
+                <h1>PRE-VIEW AUDIT TREND MONITOR</h1>
+                <span class="subtitle">CASSETTE HEALTH ANALYTICS</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-stats">
+                <div class="header-stat">
+                    <span class="header-stat-label">Total Batches</span>
+                    <span class="header-stat-value mono" id="stat-batches">0</span>
+                </div>
+                <div class="header-stat">
+                    <span class="header-stat-label">Mismatches</span>
+                    <span class="header-stat-value mono" id="stat-mismatches">0</span>
+                </div>
+            </div>
+            <div class="connection-badge" id="connection-badge">
+                <span class="conn-dot" id="conn-dot"></span>
+                <span class="conn-text" id="conn-text">CONNECTING...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ════════════ ARCHITECTURE FLOW BAR ════════════ -->
+    <section class="arch-bar" id="arch-bar">
+        <div class="arch-flow">
+            <div class="arch-node node-camera">
+                <span class="arch-icon">📷</span>
+                <span class="arch-label">Camera Capture</span>
+                <span class="arch-sublabel">Per-Batch Image</span>
+            </div>
+            <div class="arch-arrow" id="arrow-1">
+                <span class="arrow-dots">▸ ▸ ▸</span>
+            </div>
+            <div class="arch-node node-audit">
+                <span class="arch-icon">🔍</span>
+                <span class="arch-label">Pre-VIEW Audit</span>
+                <span class="arch-sublabel">AI Detection</span>
+            </div>
+            <div class="arch-arrow" id="arrow-2">
+                <span class="arrow-dots">▸ ▸ ▸</span>
+            </div>
+            <div class="arch-node node-db">
+                <span class="arch-icon">🗄️</span>
+                <span class="arch-label">Audit Log</span>
+                <span class="arch-sublabel">SQLite WAL</span>
+            </div>
+            <div class="arch-arrow" id="arrow-3">
+                <span class="arrow-dots">▸ ▸ ▸</span>
+            </div>
+            <div class="arch-node node-trend">
+                <span class="arch-icon">📊</span>
+                <span class="arch-label">Trend Analysis</span>
+                <span class="arch-sublabel">Rolling Avg · Drift</span>
+            </div>
+            <div class="arch-arrow" id="arrow-4">
+                <span class="arrow-dots">▸ ▸ ▸</span>
+            </div>
+            <div class="arch-node node-dash">
+                <span class="arch-icon">🖥️</span>
+                <span class="arch-label">Dashboard</span>
+                <span class="arch-sublabel">This Screen</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════ ALERT BANNER (hidden by default) ════════════ -->
+    <div class="alert-banner" id="alert-banner" style="display: none;">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-info">
+            <span class="alert-title" id="alert-title">DRIFT DETECTED</span>
+            <span class="alert-desc" id="alert-desc">Cassette C3 confidence declining — rolling avg below threshold</span>
+        </div>
+        <button class="alert-dismiss" onclick="dismissAlert()">DISMISS</button>
+    </div>
+
+    <!-- ════════════ MAIN PANEL GRID ════════════ -->
+    <main id="main-content">
+        <div class="panel-grid">
+
+            <!-- ════ LEFT: Cassette Health Status ════ -->
+            <section class="panel cassette-panel" id="cassette-panel">
+                <div class="panel-header">
+                    <span class="panel-tag tag-health">CASSETTE HEALTH</span>
+                    <h2>Detection Status</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="cassette-cards" id="cassette-cards">
+
+                        <!-- Cassette C1 -->
+                        <div class="cassette-card state-healthy" id="card-C1">
+                            <div class="cassette-header">
+                                <div class="cassette-id-group">
+                                    <span class="cassette-dot" style="background: var(--color-c1)"></span>
+                                    <span class="cassette-id">C1</span>
+                                </div>
+                                <span class="cassette-health health-unknown" id="health-C1">—</span>
+                            </div>
+                            <div class="cassette-tablet" id="tablet-C1">Amlodipine 5mg</div>
+                            <div class="cassette-metrics">
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Confidence</span>
+                                    <span class="cassette-metric-value mono" id="conf-C1">—</span>
+                                </div>
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Rolling Avg</span>
+                                    <span class="cassette-metric-value mono" id="avg-C1">—<span class="cassette-trend-arrow" id="trend-C1"></span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cassette C2 -->
+                        <div class="cassette-card state-healthy" id="card-C2">
+                            <div class="cassette-header">
+                                <div class="cassette-id-group">
+                                    <span class="cassette-dot" style="background: var(--color-c2)"></span>
+                                    <span class="cassette-id">C2</span>
+                                </div>
+                                <span class="cassette-health health-unknown" id="health-C2">—</span>
+                            </div>
+                            <div class="cassette-tablet" id="tablet-C2">Losartan Potassium 50mg</div>
+                            <div class="cassette-metrics">
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Confidence</span>
+                                    <span class="cassette-metric-value mono" id="conf-C2">—</span>
+                                </div>
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Rolling Avg</span>
+                                    <span class="cassette-metric-value mono" id="avg-C2">—<span class="cassette-trend-arrow" id="trend-C2"></span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cassette C3 (the one that degrades) -->
+                        <div class="cassette-card state-healthy" id="card-C3">
+                            <div class="cassette-header">
+                                <div class="cassette-id-group">
+                                    <span class="cassette-dot" style="background: var(--color-c3)"></span>
+                                    <span class="cassette-id">C3</span>
+                                </div>
+                                <span class="cassette-health health-unknown" id="health-C3">—</span>
+                            </div>
+                            <div class="cassette-tablet" id="tablet-C3">Metformin 500mg</div>
+                            <div class="cassette-metrics">
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Confidence</span>
+                                    <span class="cassette-metric-value mono" id="conf-C3">—</span>
+                                </div>
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Rolling Avg</span>
+                                    <span class="cassette-metric-value mono" id="avg-C3">—<span class="cassette-trend-arrow" id="trend-C3"></span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cassette C4 -->
+                        <div class="cassette-card state-healthy" id="card-C4">
+                            <div class="cassette-header">
+                                <div class="cassette-id-group">
+                                    <span class="cassette-dot" style="background: var(--color-c4)"></span>
+                                    <span class="cassette-id">C4</span>
+                                </div>
+                                <span class="cassette-health health-unknown" id="health-C4">—</span>
+                            </div>
+                            <div class="cassette-tablet" id="tablet-C4">Atorvastatin 10mg</div>
+                            <div class="cassette-metrics">
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Confidence</span>
+                                    <span class="cassette-metric-value mono" id="conf-C4">—</span>
+                                </div>
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Rolling Avg</span>
+                                    <span class="cassette-metric-value mono" id="avg-C4">—<span class="cassette-trend-arrow" id="trend-C4"></span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cassette C5 -->
+                        <div class="cassette-card state-healthy" id="card-C5">
+                            <div class="cassette-header">
+                                <div class="cassette-id-group">
+                                    <span class="cassette-dot" style="background: var(--color-c5)"></span>
+                                    <span class="cassette-id">C5</span>
+                                </div>
+                                <span class="cassette-health health-unknown" id="health-C5">—</span>
+                            </div>
+                            <div class="cassette-tablet" id="tablet-C5">Loxoprofen 60mg</div>
+                            <div class="cassette-metrics">
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Confidence</span>
+                                    <span class="cassette-metric-value mono" id="conf-C5">—</span>
+                                </div>
+                                <div class="cassette-metric">
+                                    <span class="cassette-metric-label">Rolling Avg</span>
+                                    <span class="cassette-metric-value mono" id="avg-C5">—<span class="cassette-trend-arrow" id="trend-C5"></span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- ════ CENTER: Confidence Trend Chart ⭐ ════ -->
+            <section class="panel chart-panel" id="chart-panel">
+                <div class="panel-header">
+                    <span class="panel-tag tag-trend">CONFIDENCE TREND</span>
+                    <h2>Rolling Average — Drift Detection</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-wrapper">
+                        <canvas id="trend-chart" width="800" height="320"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: var(--color-c1)"></span>
+                            <span>C1 Amlodipine</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: var(--color-c2)"></span>
+                            <span>C2 Losartan</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: var(--color-c3)"></span>
+                            <span>C3 Metformin</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: var(--color-c4)"></span>
+                            <span>C4 Atorvastatin</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: var(--color-c5)"></span>
+                            <span>C5 Loxoprofen</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ════ RIGHT: Fault Simulator Controls ════ -->
+            <section class="panel control-panel" id="control-panel">
+                <div class="panel-header">
+                    <span class="panel-tag tag-control">FAULT SIMULATOR</span>
+                    <h2>Anomaly Injection</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="control-group">
+                        <span class="control-group-label">Gradual Degradation</span>
+                        <button class="ctrl-btn btn-degrade" id="btn-lens" onclick="sendCommand('lens_degradation')">
+                            <span class="ctrl-btn-icon">🔍</span>
+                            <div class="ctrl-btn-text">
+                                <span class="ctrl-btn-title">Simulate Lens Degradation (C3)</span>
+                                <span class="ctrl-btn-desc">Camera lens slowly dirtying — confidence drifts down batch by batch</span>
+                            </div>
+                        </button>
+                        <button class="ctrl-btn btn-wear" id="btn-wear" onclick="sendCommand('cassette_wear')">
+                            <span class="ctrl-btn-icon">⚙️</span>
+                            <div class="ctrl-btn-text">
+                                <span class="ctrl-btn-title">Simulate Cassette Wear (C2)</span>
+                                <span class="ctrl-btn-desc">Mechanical wear on cassette — slower confidence decline</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="control-group">
+                        <span class="control-group-label">Instant Fault</span>
+                        <button class="ctrl-btn btn-mismatch" id="btn-mismatch" onclick="sendCommand('pill_mismatch')">
+                            <span class="ctrl-btn-icon">💥</span>
+                            <div class="ctrl-btn-text">
+                                <span class="ctrl-btn-title">Inject Pill Mismatch</span>
+                                <span class="ctrl-btn-desc">Wrong tablet detected — instant hard failure on next batch</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="control-group">
+                        <span class="control-group-label">Recovery</span>
+                        <button class="ctrl-btn btn-reset" id="btn-reset" onclick="sendCommand('reset')">
+                            <span class="ctrl-btn-icon">🔄</span>
+                            <div class="ctrl-btn-text">
+                                <span class="ctrl-btn-title">Reset All Cassettes</span>
+                                <span class="ctrl-btn-desc">Restore all cassettes to healthy baseline — clear audit log</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ════ BOTTOM: Audit Stream Log ════ -->
+        <section class="panel log-panel" id="log-panel">
+            <div class="panel-header">
+                <span class="panel-tag tag-audit">VIA TREND ANALYZER</span>
+                <h2>Audit Stream</h2>
+                <button class="log-clear-btn" onclick="clearLog()">Clear</button>
+            </div>
+            <div class="log-container" id="log-container">
+                <div class="log-entry log-info">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-msg">Waiting for audit data from Pre-VIEW engine...</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="main-footer">
+        <span>Pre-VIEW Audit Trend Monitor — Companion Analytics Layer</span>
+        <span class="footer-tech">Python Engine · SQLite WAL · HTTP Bridge · HTML5 Dashboard</span>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# Data directory (generated at runtime)
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
